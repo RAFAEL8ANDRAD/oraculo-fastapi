@@ -1,1 +1,6 @@
-uvicorn[standard]
+fastapi
+uvicorn
+
+Copiar
+Editar
+python-dotenv
