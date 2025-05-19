@@ -4,19 +4,16 @@ import requests
 
 app = FastAPI()
 
-# Rota raiz só pra teste
-@app.get("/")
-def read_root():
-    return {"message": "Oráculo no comando! 👁‍🗨"}
-
-# Modelo de nota
 class Nota(BaseModel):
     token: str
     database_id: str
     titulo: str
     conteudo: str
 
-# Rota que envia a nota para o Notion
+@app.get("/")
+def read_root():
+    return {"message": "Oráculo no comando! 👁‍🗨"}
+
 @app.post("/enviar-nota")
 def enviar_nota(nota: Nota):
     url = "https://api.notion.com/v1/pages"
@@ -58,3 +55,4 @@ def enviar_nota(nota: Nota):
             "message": "Erro ao enviar para o Notion.",
             "erro": response.text
         }
+
