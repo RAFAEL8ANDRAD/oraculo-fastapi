@@ -1,16 +1,7 @@
-echo "# oraculo-fastapi" >> README.md
-git init
-git add README.md
-git commit -m "first commit"
-git branch -M main
-git remote add origin https://github.com/RAFAEL8ANDRAD/oraculo-fastapi.git
-git push -u origin main
-fastapi
-uvicorn
-services:
-  - type: web
-    name: oraculo-fastapi
-    env: python
-    plan: free
-    buildCommand: ""
-    startCommand: uvicorn main:app --host 0.0.0.0 --port 10000
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/")
+def root():
+    return {"message": "Oráculo no comando! 🔮"}
