@@ -4,34 +4,36 @@ from datetime import datetime
 
 app = FastAPI()
 
-# Aqui você cola seu token secreto do Notion
-notion = Client(auth="seu_token_secreto_notion")
-
-# Aqui você cola o ID da sua database do Notion
-database_id = "seu_database_id_aqui"
+notion = Client(auth="SEU_TOKEN_DO_NOTION")
+database_id = "SEU_DATABASE_ID"
 
 @app.post("/webhook")
 async def receber_trade(request: Request):
     payload = await request.json()
 
-    ativo = payload.get("ativo")
-    preco = payload.get("preco")
-    direcao = payload.get("direcao")
-    data = payload.get("data")
-
-    # Converte a data do TradingView (em milissegundos) para formato de data do Notion
-    data_formatada = datetime.utcfromtimestamp(int(data) / 1000).isoformat()
-
-    # Envia os dados para o Notion
     notion.pages.create(
         parent={"database_id": database_id},
         properties={
-            "Ativo": {"title": [{"text": {"content": ativo}}]},
-            "Preço": {"number": float(preco)},
-            "Direção": {"select": {"name": direcao}},
-            "Data": {"date": {"start": data_formatada}},
-            "Status": {"rich_text": [{"text": {"content": "Pendente"}}]}
+            "📈 Par Operado": {"title": [{"text": {"content": payload["par"]}}]},
+            "📍 Entrada": {"number": payload["entrada"]},
+            "🎯 Alvo (TP)": {"number": payload["tp"]},
+            "🛑 Stop (SL)": {"number": payload["sl"]},
+            "🎥 Print ou Link do Gráfico (TradingView)": {"url": payload["grafico"]},
+            "📊 Motivo da Entrada": {
+                "multi_select": [{"name": motivo} for motivo in payload["motivos"]]
+            },
+            "💡 Confirmações adicionais": {
+                "multi_select": [{"name": item} for item in payload["confirmacoes"]]
+            },
+            "🧠 Psicologia na entrada": {
+                "rich_text": [{"text": {"content": payload["psicologia"]}}]
+            },
+            "📌 Resultado": {"select": {"name": payload["resultado"]}},
+            "💬 Observações pós-trade": {
+                "rich_text": [{"text": {"content": payload["observacoes"]}}]
+            },
+            "📅 Data": {"date": {"start": payload["data"]}}
         }
     )
 
-    return {"status": "registrado com sucesso no Notion"}
+    return {"status": "Trade registrado no Notion"}
