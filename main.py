@@ -1,58 +1,41 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-import requests
+from fastapi import FastAPI, Request
+from notion_client import Client
+from datetime import datetime
+import os
 
 app = FastAPI()
 
-class Nota(BaseModel):
-    token: str
-    database_id: str
-    titulo: str
-    conteudo: str
+# 🔐 Pegue da variável de ambiente (Render segura) ou hardcoded (não recomendado)
+NOTION_TOKEN = os.getenv("NOTION_TOKEN", "coloque_seu_token_aqui")
+DATABASE_ID = os.getenv("NOTION_DB_ID", "coloque_seu_database_id_aqui")
 
-@app.get("/")
-def read_root():
-    return {"message": "Oráculo no comando! 👁‍🗨"}
+notion = Client(auth=NOTION_TOKEN)
 
-@app.post("/enviar-nota")
-def enviar_nota(nota: Nota):
-    url = "https://api.notion.com/v1/pages"
-    headers = {
-        "Authorization": f"Bearer {nota.token}",
-        "Content-Type": "application/json",
-        "Notion-Version": "2022-06-28"
-    }
+@app.post("/registrar-trade")
+async def registrar_trade(request: Request):
+    data = await request.json()
 
-    data = {
-        "parent": {"database_id": nota.database_id},
-        "properties": {
-            "Name": {
-                "title": [
-                    {
-                        "text": {
-                            "content": nota.titulo
-                        }
-                    }
-                ]
-            },
-            "Conteúdo": {
-                "rich_text": [
-                    {
-                        "text": {
-                            "content": nota.conteudo
-                        }
-                    }
-                ]
-            }
+    par = data.get("par", "Desconhecido")
+    direcao = data.get("direcao", "long")
+    preco = data.get("preco_entrada", 0.0)
+    sl = data.get("stop_loss", 0.0)
+    tp = data.get("take_profit", 0.0)
+    estrategia = data.get("estrategia", "Não informado")
+    resultado = data.get("resultado", "pendente")
+    timestamp = datetime.now().isoformat()
+
+    response = notion.pages.create(
+        parent={"database_id": DATABASE_ID},
+        properties={
+            "par": {"title": [{"text": {"content": par}}]},
+            "direcao": {"select": {"name": direcao}},
+            "preco_entrada": {"number": preco},
+            "stop_loss": {"number": sl},
+            "take_profit": {"number": tp},
+            "estrategia": {"rich_text": [{"text": {"content": estrategia}}]},
+            "timestamp": {"date": {"start": timestamp}},
+            "resultado": {"select": {"name": resultado}},
         }
-    }
+    )
 
-    response = requests.post(url, headers=headers, json=data)
-    if response.status_code in [200, 201]:
-        return {"message": "Nota enviada com sucesso para o Notion! 🚀"}
-    else:
-        return {
-            "message": "Erro ao enviar para o Notion.",
-            "erro": response.text
-        }
-
+    return {"status": "registrado", "notion_id": response["id"]}
