@@ -18,23 +18,38 @@ def criar_trade_notion(data):
     body = {
         "parent": {"database_id": NOTION_DATABASE_ID},
         "properties": {
-            "Data": {"date": {"start": datetime.datetime.utcnow().date().isoformat()}},
-            "Par Operado": {"title": [{"text": {"content": data["par"]}}]},
-            "Entrada": {"number": float(data["preco"])},
-            "Horário do Trade": {"rich_text": [{"text": {"content": data["hora"]}}]},
-            "Resultado": {"multi_select": [{"name": "🔮 Pendente"}]},
+            "Data": {
+                "date": {
+                    "start": datetime.datetime.utcnow().date().isoformat()
+                }
+            },
+            "Par Operado": {
+                "title": [{
+                    "text": {"content": data["par"]}
+                }]
+            },
+            "Entrada": {
+                "number": float(data["preco"])
+            },
+            "Horário do Trade": {
+                "rich_text": [{
+                    "text": {"content": data["hora"]}
+                }]
+            },
+            "Resultado": {
+                "multi_select": [{
+                    "name": "🔮 Pendente"
+                }]
+            }
         }
     }
-    return requests.post(NOTION_API_URL, headers=headers, json=body)
+
+    response = requests.post(NOTION_API_URL, headers=headers, json=body)
+    return response.status_code
 
 @app.post("/webhook")
 async def receber_sinal(request: Request):
     payload = await request.json()
     print("Recebido:", payload)
-    criar_trade_notion(payload)
-    return {"status": "ok"}
-
-        }
-    )
-
-    return {"status": "Trade registrado no Notion"}
+    status = criar_trade_notion(payload)
+    return {"status": "enviado", "notion_status": status}
